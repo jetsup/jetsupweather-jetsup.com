@@ -7,7 +7,7 @@ import Soup from 'gi://Soup?version=3.0';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 const LOG_FILE = '/home/george/.local/share/gnome-shell/extensions/jetsupweather@jetsup.com/prefs-debug.log';
-const MAX_LOCATIONS = 10;
+const MAX_LOCATIONS = 5;
 const _enc = new TextEncoder();
 
 function log(msg) {

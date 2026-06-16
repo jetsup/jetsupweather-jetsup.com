@@ -1,1 +1,20 @@
-/* Add your custom extension styling here */
+.weather-label {
+    font-weight: bold;
+    padding-left: 4px;
+}
+
+.weather-location-name {
+    font-weight: bold;
+    font-size: 1.05em;
+    padding-left: 8px;
+}
+
+.weather-line {
+    padding-left: 8px;
+}
+
+.weather-detail {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+    padding-left: 8px;
+}
