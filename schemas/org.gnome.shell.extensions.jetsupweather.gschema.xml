@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema path="/org/gnome/shell/extensions/jetsupweather/" id="org.gnome.shell.extensions.jetsupweather">
+    <key name="locations" type="s">
+      <default>'[]'</default>
+      <summary>Weather locations</summary>
+      <description>JSON array of location objects with name, query, latitude, longitude, and country fields.</description>
+    </key>
+    <key name="temperature-unit" type="s">
+      <default>'celsius'</default>
+      <summary>Temperature unit</summary>
+      <description>Temperature unit: celsius or fahrenheit.</description>
+    </key>
+    <key name="wind-speed-unit" type="s">
+      <default>'km/h'</default>
+      <summary>Wind speed unit</summary>
+      <description>Wind speed unit: km/h, mph, m/s, or knots.</description>
+    </key>
+    <key name="forecast-days" type="i">
+      <default>3</default>
+      <summary>Forecast days</summary>
+      <description>Number of forecast days to display (1-7).</description>
+      <range min="1" max="7"/>
+    </key>
+    <key name="refresh-interval" type="i">
+      <default>15</default>
+      <summary>Refresh interval (minutes)</summary>
+      <description>How often to refresh weather data (5-60 minutes).</description>
+      <range min="5" max="60"/>
+    </key>
+  </schema>
+</schemalist>
