@@ -26,7 +26,7 @@ A GNOME Shell 46 extension that displays weather conditions for multiple locatio
 1. Clone the repository to the GNOME Shell extensions directory:
 
     ```bash
-    git clone https://github.com/your-username/jetsupweather.git \
+    git clone https://github.com/jetsup/jetsupweather.git \
       ~/.local/share/gnome-shell/extensions/jetsupweather@jetsup.com
     ```
 
@@ -46,6 +46,7 @@ A GNOME Shell 46 extension that displays weather conditions for multiple locatio
     ```
 
 5. Open the preferences to add locations:
+
     ```bash
     gnome-extensions prefs jetsupweather@jetsup.com
     ```
@@ -84,6 +85,7 @@ npm run format:check  # just checks (CI-friendly)
     Then restart GNOME Shell or log out/in.
 
 - **Full shell restart** (Wayland):
+
     ```bash
     kill -9 $(pgrep -x gnome-shell)
     ```
@@ -92,6 +94,7 @@ npm run format:check  # just checks (CI-friendly)
 
 - The preferences UI runs as a **separate standalone process** (`gnome-extensions prefs`), not inside gnome-shell.
 - If `gnome-extensions prefs` hangs, kill stale D-Bus processes:
+
     ```bash
     pgrep -f 'org.gnome.Shell.Extensions' | xargs -r kill -9
     ```
@@ -106,7 +109,7 @@ tail -f ~/.local/share/gnome-shell/extensions/jetsupweather@jetsup.com/prefs-deb
 
 ## Project Structure
 
-```
+```txt
 jetsupweather@jetsup.com/
 ├── extension.js        # Main extension: Indicator, weather fetching, menu
 ├── prefs.js            # Preferences window: location management, settings
