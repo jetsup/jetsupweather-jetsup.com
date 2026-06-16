@@ -120,9 +120,9 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
         settings.connect('changed::forecast-days', refreshSettings);
         generalGroup.add(forecastRow);
 
-        const refreshRow = Adw.SpinRow.new_with_range(5, 60, 5);
+        const refreshRow = Adw.SpinRow.new_with_range(10, 300, 5);
         refreshRow.set_title('Refresh Interval');
-        refreshRow.set_subtitle('Minutes between weather data refreshes');
+        refreshRow.set_subtitle('Seconds between weather data refreshes');
         const refreshSettings2 = () => {
             refreshRow.set_value(settings.get_int('refresh-interval'));
         };

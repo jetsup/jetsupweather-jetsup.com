@@ -1,20 +1,27 @@
-.weather-label {
-    font-weight: bold;
-    padding-left: 4px;
-}
-
-.weather-location-name {
-    font-weight: bold;
-    font-size: 1.05em;
-    padding-left: 8px;
-}
-
-.weather-line {
-    padding-left: 8px;
-}
-
 .weather-detail {
     font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.7);
-    padding-left: 8px;
+    padding: 1px 0;
+}
+
+.weather-forecast-box {
+    spacing: 6px;
+    padding: 6px;
+}
+
+.weather-forecast-card {
+    background-color: rgba(128, 128, 128, 0.15);
+    border-radius: 8px;
+    padding: 8px;
+    spacing: 4px;
+    min-width: 72px;
+    text-align: center;
+}
+
+.weather-forecast-icon {
+    icon-size: 24px;
+}
+
+.weather-forecast-temp {
+    font-size: 0.9em;
+    font-weight: bold;
 }

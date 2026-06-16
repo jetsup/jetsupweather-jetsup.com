@@ -1,21 +1,3 @@
-/* extension.js
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
-
 import GObject from 'gi://GObject';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
@@ -90,111 +72,211 @@ function formatWind(kmh, unit) {
     return `${Math.round(fn(kmh) * 10) / 10} ${unit}`;
 }
 
+function dayName(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return names[d.getDay()];
+}
+
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
     _init(extension) {
         super._init(0.0, 'Jetsup Weather');
         this._extension = extension;
-        this._settings = extension.getSettings();
 
         this._icon = new St.Icon({
             icon_name: 'weather-clouds-symbolic',
             style_class: 'system-status-icon',
         });
-        this._label = new St.Label({
-            text: '---',
-            style_class: 'weather-label',
-        });
-        const box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
-        box.add_child(this._icon);
-        box.add_child(this._label);
-        this.add_child(box);
+        this.add_child(this._icon);
 
-        this._items = [];
+        this._menuItems = [];
+        this._built = false;
     }
 
     setWeather(allData) {
+        if (allData.length > 0 && allData[0].current)
+            this._icon.icon_name = weatherIcon(allData[0].current.weather_code, allData[0].current.is_day);
+
+        if (allData.length === 0)
+            return this._rebuild(allData);
+
+        if (!this._built) {
+            this._rebuild(allData);
+            this._built = true;
+            return;
+        }
+
+        const max = Math.max(this._menuItems.length, allData.length);
+        for (let i = 0; i < max; i++) {
+            if (i >= allData.length) {
+                while (this._menuItems.length > i) {
+                    const e = this._menuItems.pop();
+                    this.menu.remove_child(e.item);
+                }
+                break;
+            }
+            if (i >= this._menuItems.length) {
+                const e = this._createEntry(allData[i]);
+                this._menuItems.push(e);
+                this.menu.addMenuItem(e.item, i);
+            } else {
+                this._updateEntry(this._menuItems[i], allData[i]);
+            }
+        }
+    }
+
+    _rebuild(allData) {
         this.menu.removeAll();
+        this._menuItems = [];
 
         if (allData.length === 0) {
             this._icon.icon_name = 'weather-clouds-symbolic';
-            this._label.text = '---';
             const item = new PopupMenu.PopupMenuItem('No locations configured');
             item.setSensitive(false);
             this.menu.addMenuItem(item);
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            const prefBtn = new PopupMenu.PopupMenuItem('Configure locations\u2026');
-            prefBtn.connect('activate', () => Util.spawn(['gnome-extensions', 'prefs', this._extension.uuid]));
-            this.menu.addMenuItem(prefBtn);
+            const btn = new PopupMenu.PopupMenuItem('Configure locations\u2026');
+            btn.connect('activate', () => Util.spawn(['gnome-extensions', 'prefs', this._extension.uuid]));
+            this.menu.addMenuItem(btn);
             return;
         }
 
-        const first = allData[0];
-        const c = first.current;
-        if (c) {
-            this._icon.icon_name = weatherIcon(c.weather_code, c.is_day);
-            this._label.text = formatTemp(c.temperature_2m, this._settings.get_string('temperature-unit'));
-        }
-
         for (const loc of allData) {
-            const item = this._makeLocationItem(loc);
-            this.menu.addMenuItem(item);
+            const e = this._createEntry(loc);
+            this._menuItems.push(e);
+            this.menu.addMenuItem(e.item);
         }
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const prefBtn = new PopupMenu.PopupMenuItem('Configure locations\u2026');
-        prefBtn.connect('activate', () => Util.spawn(['gnome-extensions', 'prefs', this._extension.uuid]));
-        this.menu.addMenuItem(prefBtn);
+        const rBtn = new PopupMenu.PopupMenuItem('Refresh now');
+        rBtn.connect('activate', () => this._extension._refresh());
+        this.menu.addMenuItem(rBtn);
+        const pBtn = new PopupMenu.PopupMenuItem('Configure locations\u2026');
+        pBtn.connect('activate', () => Util.spawn(['gnome-extensions', 'prefs', this._extension.uuid]));
+        this.menu.addMenuItem(pBtn);
     }
 
-    _makeLocationItem(loc) {
-        const item = new PopupMenu.PopupBaseMenuItem({reactive: false});
+    _createEntry(loc) {
+        const item = new PopupMenu.PopupSubMenuMenuItem(loc.label || loc.query || 'Unknown');
+        const icon = new St.Icon({
+            icon_name: 'weather-clouds-symbolic',
+            style_class: 'system-status-icon',
+        });
+        item.actor.insert_child_at_index(icon, 0);
+        const entry = {item, icon, detailBox: null, forecastBox: null};
+        this._updateEntry(entry, loc);
+        return entry;
+    }
+
+    _updateEntry(entry, loc) {
+        const item = entry.item;
+        const icon = entry.icon;
+        const unit = this._extension._settings.get_string('temperature-unit');
+
+        if (loc.fetching) {
+            item.label.text = `${loc.label || loc.query || 'Unknown'}  Fetching\u2026`;
+            icon.icon_name = 'weather-clouds-symbolic';
+        } else {
+            const c = loc.current;
+            item.label.text = `${loc.label || loc.query || 'Unknown'}  ${c ? formatTemp(c.temperature_2m, unit) : ''}`;
+            icon.icon_name = weatherIcon(c?.weather_code ?? 0, c?.is_day ?? 1);
+        }
+
+        if (!entry.detailBox) {
+            item.menu.removeAll();
+            item.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+            const dItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
+            entry.detailBox = new St.BoxLayout({vertical: true});
+            dItem.add_child(entry.detailBox);
+            item.menu.addMenuItem(dItem);
+        }
+
+        if (!loc.fetching && loc.daily && loc.daily.time && !entry.forecastBox) {
+            item.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            const fItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
+            const sv = new St.ScrollView({
+                hscrollbar_policy: 0,
+                vscrollbar_policy: 2,
+                clip_to_allocation: true,
+            });
+            entry.forecastBox = new St.BoxLayout({style_class: 'weather-forecast-box'});
+            sv.child = entry.forecastBox;
+            fItem.add_child(sv);
+            item.menu.addMenuItem(fItem);
+        }
+
+        let child = entry.detailBox.get_first_child();
+        while (child) {
+            const next = child.get_next_sibling();
+            entry.detailBox.remove_child(child);
+            child = next;
+        }
+
+        if (loc.fetching) {
+            entry.detailBox.add_child(new St.Label({text: 'Fetching weather data\u2026'}));
+            return;
+        }
+
         const c = loc.current;
         const d = loc.daily;
 
-        const icon = new St.Icon({
-            icon_name: weatherIcon(c?.weather_code ?? 0, c?.is_day ?? 1),
-            style_class: 'system-status-icon',
-        });
-
-        const textBox = new St.BoxLayout({vertical: true});
-        const nameLabel = new St.Label({
-            text: loc.label || loc.query || 'Unknown',
-            style_class: 'weather-location-name',
-        });
-        textBox.add_child(nameLabel);
-
         if (c) {
-            const unit = this._settings.get_string('temperature-unit');
-            const windUnit = this._settings.get_string('wind-speed-unit');
-            const temp = formatTemp(c.temperature_2m, unit);
+            const windUnit = this._extension._settings.get_string('wind-speed-unit');
             const feels = formatTemp(c.apparent_temperature, unit);
-            const condition = weatherText(c.weather_code);
             const wind = formatWind(c.wind_speed_10m, windUnit);
-            const humidity = `${c.relative_humidity_2m}%`;
+            const cond = weatherText(c.weather_code);
 
-            const line1 = new St.Label({
-                text: `${temp}  ${condition}`,
-                style_class: 'weather-line',
-            });
-            textBox.add_child(line1);
+            const lines = [
+                cond,
+                `Temperature: ${formatTemp(c.temperature_2m, unit)} (feels like ${feels})`,
+                `Humidity: ${c.relative_humidity_2m}%`,
+                `Wind: ${wind}`,
+                `Cloud cover: ${c.cloud_cover}%`,
+                `Pressure: ${c.pressure_msl} hPa`,
+            ];
+            if (c.precipitation > 0)
+                lines.push(`Precipitation: ${c.precipitation} mm`);
 
-            const line2 = new St.Label({
-                text: `Feels ${feels}  \u2726${humidity}  \u27a2${wind}`,
-                style_class: 'weather-detail',
-            });
-            textBox.add_child(line2);
+            for (const line of lines)
+                entry.detailBox.add_child(new St.Label({text: line, style_class: 'weather-detail'}));
         }
 
-        item.add_child(icon);
-        item.add_child(textBox);
-        return item;
+        if (entry.forecastBox && d && d.time) {
+            let fc = entry.forecastBox.get_first_child();
+            while (fc) {
+                const next = fc.get_next_sibling();
+                entry.forecastBox.remove_child(fc);
+                fc = next;
+            }
+
+            for (let i = 0; i < d.time.length; i++) {
+                const hi = formatTemp(d.temperature_2m_max[i], unit);
+                const lo = formatTemp(d.temperature_2m_min[i], unit);
+                const code = d.weather_code[i];
+                const prob = d.precipitation_probability_max[i] ?? 0;
+
+                const card = new St.BoxLayout({vertical: true, style_class: 'weather-forecast-card'});
+                card.add_child(new St.Label({text: dayName(d.time[i]), style_class: 'weather-detail'}));
+                card.add_child(new St.Icon({
+                    icon_name: weatherIcon(code, 1),
+                    style_class: 'weather-forecast-icon',
+                    icon_size: 24,
+                }));
+                card.add_child(new St.Label({text: `${hi} / ${lo}`, style_class: 'weather-forecast-temp'}));
+                if (prob > 0)
+                    card.add_child(new St.Label({text: `\u2602${prob}%`, style_class: 'weather-detail'}));
+                entry.forecastBox.add_child(card);
+            }
+        }
     }
 });
 
 export default class JetsupWeatherExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
+        this._weatherCache = {};
         this._indicator = new Indicator(this);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
 
@@ -221,8 +303,8 @@ export default class JetsupWeatherExtension extends Extension {
     }
 
     _startTimer() {
-        const intervalMin = Math.max(5, this._settings.get_int('refresh-interval'));
-        this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, intervalMin * 60, () => {
+        const interval = Math.max(10, this._settings.get_int('refresh-interval'));
+        this._timerId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, () => {
             this._refresh();
             return GLib.SOURCE_CONTINUE;
         });
@@ -244,6 +326,7 @@ export default class JetsupWeatherExtension extends Extension {
             const unit = this._settings.get_string('temperature-unit');
             const windUnit = this._settings.get_string('wind-speed-unit');
             const forecastDays = this._settings.get_int('forecast-days');
+            const now = Date.now() / 1000;
 
             const results = await Promise.allSettled(
                 locations.map(loc => this._fetchWeather(loc, unit, windUnit, forecastDays))
@@ -251,11 +334,34 @@ export default class JetsupWeatherExtension extends Extension {
 
             const allData = [];
             for (let i = 0; i < results.length; i++) {
+                const key = `${locations[i].latitude},${locations[i].longitude}`;
                 const r = results[i];
                 if (r.status === 'fulfilled' && r.value) {
-                    r.value.label = locations[i].name || null;
-                    r.value.query = locations[i].query || null;
-                    allData.push(r.value);
+                    const data = {
+                        label: locations[i].name || null,
+                        query: locations[i].query || null,
+                        current: r.value.current,
+                        daily: r.value.daily,
+                    };
+                    this._weatherCache[key] = {data, timestamp: now};
+                    allData.push(data);
+                } else {
+                    const cached = this._weatherCache[key];
+                    if (cached && (now - cached.timestamp) < 3600) {
+                        allData.push({
+                            ...cached.data,
+                            label: locations[i].name || null,
+                            query: locations[i].query || null,
+                        });
+                    } else {
+                        allData.push({
+                            label: locations[i].name || null,
+                            query: locations[i].query || null,
+                            current: null,
+                            daily: null,
+                            fetching: true,
+                        });
+                    }
                 }
             }
 

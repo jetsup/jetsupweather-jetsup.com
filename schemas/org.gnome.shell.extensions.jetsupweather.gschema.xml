@@ -23,10 +23,10 @@
       <range min="1" max="7"/>
     </key>
     <key name="refresh-interval" type="i">
-      <default>15</default>
-      <summary>Refresh interval (minutes)</summary>
-      <description>How often to refresh weather data (5-60 minutes).</description>
-      <range min="5" max="60"/>
+      <default>30</default>
+      <summary>Refresh interval (seconds)</summary>
+      <description>How often to refresh weather data (10-300 seconds).</description>
+      <range min="10" max="300"/>
     </key>
   </schema>
 </schemalist>
