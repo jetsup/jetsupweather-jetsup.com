@@ -1,0 +1,20 @@
+{
+  "name": "jetsupweather",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": ["prettier --write", "eslint"]
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.0.0"
+  }
+}

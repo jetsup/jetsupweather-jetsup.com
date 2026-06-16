@@ -1,0 +1,9 @@
+node_modules/
+.husky/
+package-lock.json
+raw_weather_payload.json
+*.compiled
+*.log
+*.temp
+prefs-debug.log
+schemas/

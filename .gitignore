@@ -1,3 +1,4 @@
 *.temp
 *.compiled
 *.log
+node_modules/

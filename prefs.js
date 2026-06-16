@@ -4,7 +4,7 @@ import Gtk from 'gi://Gtk?version=4.0';
 import Adw from 'gi://Adw?version=1';
 import Soup from 'gi://Soup?version=3.0';
 
-import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 const LOG_FILE = '/home/george/.local/share/gnome-shell/extensions/jetsupweather@jetsup.com/prefs-debug.log';
 const MAX_LOCATIONS = 5;
@@ -35,9 +35,7 @@ function clearLog() {
 }
 
 function makeResultLabel(result) {
-    return result.admin1
-        ? `${result.name}, ${result.admin1}, ${result.country}`
-        : `${result.name}, ${result.country}`;
+    return result.admin1 ? `${result.name}, ${result.admin1}, ${result.country}` : `${result.name}, ${result.country}`;
 }
 
 function makeResultData(result) {
@@ -74,7 +72,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
 
         const tempRow = new Adw.ComboRow({
             title: 'Temperature Unit',
-            model: new Gtk.StringList({strings: ['Celsius', 'Fahrenheit']}),
+            model: new Gtk.StringList({ strings: ['Celsius', 'Fahrenheit'] }),
         });
         {
             const idx = settings.get_string('temperature-unit') === 'fahrenheit' ? 1 : 0;
@@ -90,7 +88,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
 
         const windSpeedRow = new Adw.ComboRow({
             title: 'Wind Speed Unit',
-            model: new Gtk.StringList({strings: ['km/h', 'mph', 'm/s', 'knots']}),
+            model: new Gtk.StringList({ strings: ['km/h', 'mph', 'm/s', 'knots'] }),
         });
         {
             const units = ['km/h', 'mph', 'm/s', 'knots'];
@@ -253,7 +251,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
 
                     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(text)}&count=8&language=en&format=json`;
                     const msg = Soup.Message.new('GET', url);
-                    const session = new Soup.Session({timeout: 5});
+                    const session = new Soup.Session({ timeout: 5 });
 
                     log(`fetching: ${url}`);
                     session.send_and_read_async(msg, GLib.PRIORITY_DEFAULT, null, (s, res) => {
@@ -306,24 +304,26 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
 
             resultBox.connect('row-activated', () => {
                 const selected = resultBox.get_selected_row();
-                if (!selected)
-                    return;
+                if (!selected) return;
 
                 const data = selected._data;
                 const locations = getLocations();
 
-                const isDuplicate = locations.some((loc, i) =>
-                    i !== row._index &&
-                    loc.latitude != null &&
-                    Math.abs(loc.latitude - data.latitude) < 0.001 &&
-                    Math.abs(loc.longitude - data.longitude) < 0.001
+                const isDuplicate = locations.some(
+                    (loc, i) =>
+                        i !== row._index &&
+                        loc.latitude != null &&
+                        Math.abs(loc.latitude - data.latitude) < 0.001 &&
+                        Math.abs(loc.longitude - data.longitude) < 0.001,
                 );
 
                 if (isDuplicate) {
-                    window.add_toast(new Adw.Toast({
-                        title: `${data.name} is already in your locations`,
-                        priority: Adw.ToastPriority.HIGH,
-                    }));
+                    window.add_toast(
+                        new Adw.Toast({
+                            title: `${data.name} is already in your locations`,
+                            priority: Adw.ToastPriority.HIGH,
+                        }),
+                    );
                     return;
                 }
 
@@ -331,8 +331,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
                 searchEntry.text = data.query;
                 showResults(false);
 
-                if (!nameEntry.text.trim())
-                    nameEntry.text = makeAutoLabel(data);
+                if (!nameEntry.text.trim()) nameEntry.text = makeAutoLabel(data);
 
                 const idx = row._index;
                 if (locations[idx]) {
@@ -341,8 +340,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
                     locations[idx].longitude = data.longitude;
                     locations[idx].country = data.country;
                     locations[idx].country_code = data.country_code;
-                    if (!locations[idx].name)
-                        locations[idx].name = nameEntry.text;
+                    if (!locations[idx].name) locations[idx].name = nameEntry.text;
                     saveLocations(locations);
                 }
             });
@@ -366,8 +364,7 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
                 dialog.set_response_appearance('remove', Adw.ResponseAppearance.DESTRUCTIVE);
                 dialog.set_default_response('cancel');
                 dialog.connect('response', (d, response) => {
-                    if (response !== 'remove')
-                        return;
+                    if (response !== 'remove') return;
                     const locations = getLocations();
                     locations.splice(row._index, 1);
                     saveLocations(locations);
@@ -385,20 +382,21 @@ export default class JetsupWeatherPrefs extends ExtensionPreferences {
 
         const loadAllLocations = () => {
             const locations = getLocations();
-            for (let i = 0; i < locations.length; i++)
-                addLocationRow(locations[i], i);
+            for (let i = 0; i < locations.length; i++) addLocationRow(locations[i], i);
         };
 
         addButton.connect('clicked', () => {
             const locations = getLocations();
             if (locations.length >= MAX_LOCATIONS) {
-                window.add_toast(new Adw.Toast({
-                    title: `Maximum ${MAX_LOCATIONS} locations allowed`,
-                    priority: Adw.ToastPriority.HIGH,
-                }));
+                window.add_toast(
+                    new Adw.Toast({
+                        title: `Maximum ${MAX_LOCATIONS} locations allowed`,
+                        priority: Adw.ToastPriority.HIGH,
+                    }),
+                );
                 return;
             }
-            locations.push({name: '', query: ''});
+            locations.push({ name: '', query: '' });
             saveLocations(locations);
             addLocationRow(locations[locations.length - 1], locations.length - 1);
         });
