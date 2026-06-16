@@ -135,6 +135,27 @@ jetsupweather@jetsup.com/
 
 This project uses [Prettier](https://prettier.io/) for code formatting and [ESLint](https://eslint.org/) for linting. Run `npm run format` before committing to ensure consistent style across all contributions.
 
+### Screenshots
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;">
+  <figure style="margin: 0;">
+    <img src="./imgs/panel.png" alt="Screenshot of Jetsup Weather Panel View" />
+    <figcaption>Panel view</figcaption>
+  </figure>
+  <figure style="margin: 0;">
+    <img src="./imgs/panel-min.png" alt="Screenshot of Jetsup Weather Minimal View" />
+    <figcaption>Minimal panel view</figcaption>
+  </figure>
+  <figure style="margin: 0;">
+    <img src="./imgs/panel-detail.png" alt="Screenshot of Jetsup Weather Detail View" />
+    <figcaption>Detailed weather view</figcaption>
+  </figure>
+  <figure style="margin: 0;">
+    <img src="./imgs/prefs.png" alt="Screenshot of Jetsup Weather Preferences" />
+    <figcaption>Preferences window</figcaption>
+  </figure>
+</div>
+
 ## License
 
 MIT
